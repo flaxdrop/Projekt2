@@ -19,7 +19,7 @@ std::queue<bool> pushbutton;
 std::atomic<bool> exitprogram(false);
 std::mutex mtx;
 std::condition_variable cv;
-void trafficLightController(int greenTime, int redTime, int yellowTime);
+void trafficLightController(int greenTime, int redTime, int yellowTime, int extendedRedTime);
 void userInput();
 void logState(const std::string &event);
 
@@ -69,16 +69,16 @@ void trafficLightCycle(int greenTime, int redTime, int yellowTime) // Traffic Li
     }
 }
 
-void pedestrianCycle() // Pedestrian Light cycle
-{
-}
+// void pedestrianCycle() // Pedestrian Light cycle
+//{
+// }
 
-void pushButton() // Pedestrian pushes the button, ex if traffic light red -> red for longer
-{
+// void pushButton() // Pedestrian pushes the button, ex if traffic light red -> red for longer
+//{
 
-    // std::unique_lock<std::mutex>lock(mtx);
-    // pbutton.wait(lock,[]{ return ready;});
-}
+// std::unique_lock<std::mutex>lock(mtx);
+// pbutton.wait(lock,[]{ return ready;});
+//}
 void setPushbutton()
 {
 }
@@ -90,12 +90,13 @@ int main()
     int greenTime = 10;
     int redTime = 10;
     int yellowTime = 3;
+    int extendedRedTime = 15;
 
     // std::thread redLightThread(redLight, redTime);
     // std::thread yellowLightThread(yellowLight, yellowTime);
     // std::thread greenLightThread(greenLight, greenTime);
     std::thread userInputThread(userInput);
-    std::thread trafficLightControllerThread(trafficLightController, greenTime, redTime, yellowTime);
+    std::thread trafficLightControllerThread(trafficLightController, greenTime, redTime, yellowTime, extendedRedTime);
 
     userInputThread.join();
     trafficLightControllerThread.join();
@@ -132,8 +133,11 @@ void userInput()
         }
         else if (input == 'p')
         {
-            std::unique_lock<std::mutex> lock(mtx);
-            pushbutton.push(true);
+            {
+                std::unique_lock<std::mutex> lock(mtx);
+                pushbutton.push(true);
+            }
+            cv.notify_all();
         }
         else
         {
@@ -150,11 +154,12 @@ void logState(const std::string &event)
     std::cout << "[" << std::put_time(localtime(&now_c), "%T") << "] " << event << std::endl;
 } // Funktion för att se vilken tid dem olika funktionerna utförs i realtid. chrono::system_clock::now()
 
-void trafficLightController(int greenTime, int redTime, int yellowTime)
+void trafficLightController(int greenTime, int redTime, int yellowTime, int extendedRedTime)
 {
     while (!exitprogram)
     {
         std::unique_lock<std::mutex> lock(mtx);
+        /*std::lock_guard<std::mutex> lock(mtx);*/
         if (!pushbutton.empty())
 
         {
@@ -167,27 +172,35 @@ void trafficLightController(int greenTime, int redTime, int yellowTime)
                 currentState = TrafficLightColor::YELLOW;
                 logState("Traffic Light: Yellow");
                 cv.wait_for(lock, std::chrono::seconds(yellowTime));
-                currentState = TrafficLightColor::RED;
-                logState("Traffic Light: Red");
+                // std::this_thread::sleep_for(std::chrono::seconds(yellowTime));
+                //  currentState = TrafficLightColor::RED;
+                //  logState("Traffic Light: Red");
             }
-            logState("Traffic Light: Extented Red");
-            cv.wait_for(lock, std::chrono::seconds(redTime));
+            currentState = TrafficLightColor::RED;
+            logState("Traffic Light: Extended Red");
+            cv.wait_for(lock, std::chrono::seconds(extendedRedTime));
+            // std::this_thread::sleep_for(std::chrono::seconds(extendedRedTime));
             continue;
         }
+
         currentState = TrafficLightColor::YELLOW;
         logState("Traffic Light: Yellow");
         cv.wait_for(lock, std::chrono::seconds(yellowTime));
+        // std::this_thread::sleep_for(std::chrono::seconds(yellowTime));
 
         currentState = TrafficLightColor::GREEN;
         logState("Traffic Light: Green");
         cv.wait_for(lock, std::chrono::seconds(greenTime));
+        // std::this_thread::sleep_for(std::chrono::seconds(greenTime));
 
         currentState = TrafficLightColor::YELLOW;
         logState("Traffic Light: Yellow");
         cv.wait_for(lock, std::chrono::seconds(yellowTime));
+        // std::this_thread::sleep_for(std::chrono::seconds(yellowTime));
 
         currentState = TrafficLightColor::RED;
         logState("Traffic Light: Red");
         cv.wait_for(lock, std::chrono::seconds(redTime));
+        // std::this_thread::sleep_for(std::chrono::seconds(redTime));
     }
 }
