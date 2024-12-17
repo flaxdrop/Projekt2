@@ -92,9 +92,9 @@ void trafficLightController(int greenTime, int redTime, int yellowTime, int exte
 
                 currentState = TrafficLightColor::RED;
                 logState("Traffic Light: Red");
-                cv.wait_for(lock, std::chrono::seconds(extendedRedTime));
+                cv.wait_for(lock, std::chrono::seconds(redTime));
             }
-            logState("Traffic Light: Extended Red");
+            logState("Traffic Light: Extended Red light for pedestrian");
             cv.wait_for(lock, std::chrono::seconds(extendedRedTime));
             continue;
         }
