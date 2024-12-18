@@ -112,9 +112,18 @@ void trafficLightController(int greenTime, int redTime, int yellowTime, int exte
         logState("Traffic Light: Yellow");
         cv.wait_for(lock, std::chrono::seconds(yellowTime));
 
-        currentState = TrafficLightColor::GREEN;
-        logState("Traffic Light: Green");
-        cv.wait_for(lock, std::chrono::seconds(greenTime));
+        if (!pushbutton.empty())
+        {
+            currentState = TrafficLightColor::GREEN;
+            logState("Traffic Light: Green");
+            cv.wait_for(lock, std::chrono::seconds(greenTime - 3));
+        }
+        else
+        {
+            currentState = TrafficLightColor::GREEN;
+            logState("Traffic Light: Green");
+            cv.wait_for(lock, std::chrono::seconds(greenTime));
+        }
 
         currentState = TrafficLightColor::YELLOW;
         logState("Traffic Light: Yellow");
