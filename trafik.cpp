@@ -28,10 +28,10 @@ void logState(const std::string &event);
 int main()
 {
 
-    int greenTime = 5;
-    int redTime = 5;
+    int greenTime = 8;
+    int redTime = 8;
     int yellowTime = 3;
-    int extendedRedTime = 10;
+    int extendedRedTime = 8;
 
     std::thread userInputThread(userInput);
     std::thread trafficLightControllerThread(trafficLightController, greenTime, redTime, yellowTime, extendedRedTime);
@@ -58,7 +58,7 @@ void userInput()
             {
                 std::unique_lock<std::mutex> lock(mtx);
                 pushbutton.push(true);
-                logState("Pedestrian Button Pushed");
+                logState("Pedestrian Button Pushed, wait for extended red signal.");
             }
             cv.notify_one();
         }
@@ -100,20 +100,9 @@ void trafficLightController(int greenTime, int redTime, int yellowTime, int exte
     {
         std::unique_lock<std::mutex> lock(mtx);
         if (!pushbutton.empty())
-
         {
             pushbutton.pop();
-            if (currentState != TrafficLightColor::RED)
-
-            {
-                currentState = TrafficLightColor::YELLOW;
-                logState("Traffic Light: Yellow");
-                cv.wait_for(lock, std::chrono::seconds(yellowTime));
-
-                currentState = TrafficLightColor::RED;
-                logState("Traffic Light: Red");
-                cv.wait_for(lock, std::chrono::seconds(redTime));
-            }
+            
             logState("Traffic Light: Extended Red light for pedestrian");
             cv.wait_for(lock, std::chrono::seconds(extendedRedTime));
             continue;
