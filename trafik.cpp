@@ -24,7 +24,7 @@ std::condition_variable cv;
 void trafficLightController(int greenTime, int redTime, int yellowTime, int extendedRedTime);
 void userInput();
 void logState(const std::string &event);
-
+//Main som innehåller config för ljusens tider, 2 threads med ljusen på en, och userinput på den andra.
 int main()
 {
 
@@ -41,7 +41,7 @@ int main()
 
     return 0;
 }
-
+//User input som kollar om q trycks så avslutar programmet, om p trycks så gör det att fotgängaren kan gå över övergångstället.
 void userInput()
 {
     while (!exitprogram)
@@ -68,8 +68,11 @@ void userInput()
         }
     }
 }
+
 std::ofstream logFile("traffic_light_log.txt", std::ios_base::app);
 std::mutex logMutex;
+
+//Funktion som printar ut system_clock till terminalen för att hålla koll, samt loggar detta till en textfile för att spara informationen.
 
 void logState(const std::string &event)
 {
@@ -88,7 +91,9 @@ void logState(const std::string &event)
         logFile << logEntry << std::endl;
     }
 }
-
+//Här är där all magi händer. Funktionen som flippar mellan färgerna, tar emot pushbutton kön och ändrar färgerna därefter.
+//Här har vi använt oss av logstate funktionen som vi skrev för varje output, samt condition_variable och mutex för att se till
+//Att det inte uppstår race condition mellan trådarna.
 void trafficLightController(int greenTime, int redTime, int yellowTime, int extendedRedTime)
 {
     while (!exitprogram)
