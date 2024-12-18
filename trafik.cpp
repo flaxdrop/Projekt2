@@ -8,6 +8,8 @@
 #include <condition_variable>
 #include <iomanip>
 #include <queue>
+#include <fstream>
+#include <sstream>
 enum class TrafficLightColor
 {
     GREEN,
@@ -66,12 +68,25 @@ void userInput()
         }
     }
 }
+std::ofstream logFile("traffic_light_log.txt", std::ios_base::app);
+std::mutex logMutex;
 
 void logState(const std::string &event)
 {
     auto now = std::chrono::system_clock::now();
     auto now_c = std::chrono::system_clock::to_time_t(now);
-    std::cout << "[" << std::put_time(localtime(&now_c), "%T") << "] " << event << std::endl;
+
+    std::ostringstream oss;
+    oss << "[" << std::put_time(localtime(&now_c), "%T") << "] " << event;
+    std::string logEntry = oss.str();
+
+    std::cout << logEntry << std::endl;
+
+    std::lock_guard<std::mutex> guard(logMutex);
+    if (logFile.is_open())
+    {
+        logFile << logEntry << std::endl;
+    }
 }
 
 void trafficLightController(int greenTime, int redTime, int yellowTime, int extendedRedTime)
@@ -94,7 +109,7 @@ void trafficLightController(int greenTime, int redTime, int yellowTime, int exte
                 logState("Traffic Light: Red");
                 cv.wait_for(lock, std::chrono::seconds(redTime));
             }
-            logState("Traffic Light: Extended red light for pedestrian");
+            logState("Traffic Light: Extended Red light for pedestrian");
             cv.wait_for(lock, std::chrono::seconds(extendedRedTime));
             continue;
         }
